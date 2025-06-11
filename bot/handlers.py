@@ -31,7 +31,7 @@ class SearchState(StatesGroup):
 def genre_keyboard():
     buttons = [KeyboardButton(text=genre) for genre in GENRES]
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[buttons[i:i + 2] for i in range(0, len(buttons), 2)])
-    keyboard.keyboard.append([KeyboardButton(text="🔥 Топ-3"), KeyboardButton(text="🎯 Рекомендации11"), KeyboardButton(text="🆕 Новинки")])
+    keyboard.keyboard.append([KeyboardButton(text="🔥 Топ-3"), KeyboardButton(text="🎯 Рекомендации"), KeyboardButton(text="🆕 Новинки")])
     keyboard.keyboard.append([KeyboardButton(text="⭐ Избранное")])
     return keyboard
 
