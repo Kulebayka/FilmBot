@@ -43,7 +43,7 @@ def back_keyboard():
 async def show_more_movies(callback: CallbackQuery, bot: Bot):
     user_id = callback.from_user.id
     now = time()
-    cooldown_seconds = 15
+    cooldown_seconds = 4
 
     last_time = user_cooldowns.get(user_id, 0)
     if now - last_time < cooldown_seconds:
