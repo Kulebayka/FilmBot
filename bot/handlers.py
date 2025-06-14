@@ -39,6 +39,26 @@ def genre_keyboard():
 def back_keyboard():
     return ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[[KeyboardButton(text="🔙 Назад к выбору жанра")]])
 
+@router.callback_query(F.data.startswith("more_"))
+async def show_more_movies(callback: CallbackQuery, bot: Bot):
+    user_id = callback.from_user.id
+    now = time()
+    cooldown_seconds = 15
+
+    last_time = user_cooldowns.get(user_id, 0)
+    if now - last_time < cooldown_seconds:
+        await callback.answer("Подождите немного перед следующим запросом.", show_alert=False)
+        return
+
+    user_cooldowns[user_id] = now
+
+    genre_name = callback.data.split("_", 1)[1]
+    user_data[user_id]["page"] += 1  # Увеличиваем страницу
+    page = user_data[user_id]["page"]
+
+    await send_movies(bot, callback.message.chat.id, genre_name, page)
+    await callback.answer()
+
 def more_movies_keyboard(genre):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Посмотреть ещё 🎥", callback_data=f"more_{genre}")],
@@ -241,26 +261,6 @@ async def delete_from_favorites(call: types.CallbackQuery):
         await call.answer("🗑 Фильм удалён из избранного.")
     else:
         await call.answer("⚠️ Не удалось удалить фильм.")
-
-@router.callback_query(F.data.startswith("more_"))
-async def show_more_movies(callback: CallbackQuery, bot: Bot):
-    user_id = callback.from_user.id
-    now = time()
-    cooldown_seconds = 15
-
-    last_time = user_cooldowns.get(user_id, 0)
-    if now - last_time < cooldown_seconds:
-        await callback.answer("Подождите немного перед следующим запросом.", show_alert=False)
-        return
-
-    user_cooldowns[user_id] = now
-
-    genre_name = callback.data.split("_", 1)[1]
-    user_data[user_id]["page"] += 1  # Увеличиваем страницу
-    page = user_data[user_id]["page"]
-
-    await send_movies(bot, callback.message.chat.id, genre_name, page)
-    await callback.answer()
 
 # Отправка фильмов по выбранному жанру
 async def send_movies(bot, chat_id, genre_name, page):
