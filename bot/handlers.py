@@ -8,7 +8,7 @@ from sqlalchemy import select
 from aiohttp import ClientSession
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-
+from time import time
 from bot.config import TMDB_API_KEY
 from bot.database.crud import get_or_create_user_with_favorites, add_favorite, get_favorites, remove_favorite, get_user_by_id
 import aiohttp
@@ -22,6 +22,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+user_cooldowns = {}
 router = Router()
 user_data = {}
 
@@ -281,6 +282,26 @@ async def send_movies(bot, chat_id, genre_name, page):
             "Не понравилось? Посмотри ещё фильмы 👇",
             reply_markup=more_movies_keyboard(genre_name)
         )
+
+@router.callback_query(F.data.startswith("more_"))
+async def show_more_movies(callback: CallbackQuery, bot: Bot):
+    user_id = callback.from_user.id
+    now = time()
+    cooldown_seconds = 2
+
+    last_time = user_cooldowns.get(user_id, 0)
+    if now - last_time < cooldown_seconds:
+        await callback.answer("Подождите немного перед следующим запросом.", show_alert=False)
+        return
+
+    user_cooldowns[user_id] = now
+
+    genre_name = callback.data.split("_", 1)[1]
+    user_data[user_id]["page"] += 1  # Увеличиваем страницу
+    page = user_data[user_id]["page"]
+
+    await send_movies(bot, callback.message.chat.id, genre_name, page)
+    await callback.answer()
 
 # Отправка новых фильмов
 async def send_new_movies(bot: Bot, chat_id: int):
